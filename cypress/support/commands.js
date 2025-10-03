@@ -23,3 +23,21 @@
 //
 // -- This will overwrite an existing command --
 // Cypress.Commands.overwrite('visit', (originalFn, url, options) => { ... })
+// cypress/support/commands.js
+Cypress.Commands.add('loginByFacebook', () => {
+  const username = Cypress.env('FB_USERNAME');
+  const password = Cypress.env('FB_PASSWORD');
+
+  if (!username || !password) {
+    throw new Error('FB_USERNAME or FB_PASSWORD not set in Cypress env');
+  }
+
+  cy.visit('https://facebook.com'); // baseUrl is facebook.com
+    cy.get('#email', { timeout: 10000 }).clear().type(username);
+    cy.get('#pass').clear().type(password, { log: false });
+    cy.get('[name="login"]').click();
+
+    // wait for successful login — adjust selector for reliability
+    cy.url({ timeout: 20000 }).should('not.include', '/login');
+
+});
