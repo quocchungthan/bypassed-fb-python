@@ -8,7 +8,13 @@ import pyperclip
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from dotenv import load_dotenv
 
+# Load environment variables from .env file
+load_dotenv()
+
+FB_KEYWORDS = [k.strip() for k in os.getenv("FB_KEYWORDS", "keyword1 ,keyword2").split(",") if k.strip()]
+print(f"Using keywords: {FB_KEYWORDS}")
 
 class FacebookGroupScraper:
     def __init__(self, driver, manage_driver=True):
@@ -40,36 +46,41 @@ class FacebookGroupScraper:
                 print(f"[INFO] Found {len(post_elements)} posts so far.")
                 for el in post_elements:
                     try:
-                        # Scroll the post into view
+                        # Check if post contains any of the FB_KEYWORDS
+                        post_text = el.text.lower()
+                        if not any(keyword.lower() in post_text for keyword in FB_KEYWORDS):
+                            print(f"[⏭️] Skipping post (no keywords found)")
+                            continue
+
                         self.driver.execute_script("arguments[0].scrollIntoView(true);", el)
                         time.sleep(1)
+                        if el.text.count('/posts/') == 0:
+                            # Try clicking the "Share" button
+                            try:
+                                share_button = el.find_element(By.CSS_SELECTOR, 'span[data-ad-rendering-role="share_button"]')
+                                ActionChains(self.driver).move_to_element(share_button).click(share_button).perform()
+                                time.sleep(2)
 
-                        # Try clicking the "Share" button
-                        try:
-                            share_button = el.find_element(By.CSS_SELECTOR, 'span[data-ad-rendering-role="share_button"]')
-                            ActionChains(self.driver).move_to_element(share_button).click(share_button).perform()
-                            time.sleep(2)
+                                # Wait for the popup to appear and find the "Copy link" button
+                                copy_link_button = WebDriverWait(self.driver, 5).until(
+                                    EC.presence_of_element_located((
+                                        By.XPATH, '//div[@role="button" and (contains(., "Copy link") or .//span[contains(., "Copy link")])]'
+                                    ))
+                                )
+                                copy_link_button.click()
+                                time.sleep(1)  # wait for clipboard to update
 
-                            # Wait for the popup to appear and find the "Copy link" button
-                            copy_link_button = WebDriverWait(self.driver, 5).until(
-                                EC.presence_of_element_located((
-                                    By.XPATH, '//div[@role="button" and (contains(., "Copy link") or .//span[contains(., "Copy link")])]'
-                                ))
-                            )
-                            copy_link_button.click()
-                            time.sleep(1)  # wait for clipboard to update
+                                post_url = pyperclip.paste()
+                                print(f"[🔗] Copied post URL: {post_url}")
+                            except Exception as share_err:
+                                print(f"[⚠️] Failed to extract post link: {share_err}")
+                                post_url = "link_not_found"
 
-                            post_url = pyperclip.paste()
-                            print(f"[🔗] Copied post URL: {post_url}")
-                        except Exception as share_err:
-                            print(f"[⚠️] Failed to extract post link: {share_err}")
-                            post_url = "link_not_found"
+                            # Get HTML
+                            html = el.get_attribute("outerHTML")
 
-                        # Get HTML
-                        html = el.get_attribute("outerHTML")
-
-                        # Append the copied link at the end of HTML for now
-                        html += f"\n<!-- Post URL: {post_url} -->"
+                            # Append the copied link at the end of HTML for now
+                            html += f"\n<a href=\"{post_url}\"> go to post </a>"
 
                         collected_html.add(html)
 
