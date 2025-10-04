@@ -3,7 +3,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 import time
 import os
-from fb_tool import FacebookGroupScraper
+# from fb_tool import FacebookGroupScraper
 from dotenv import load_dotenv
 
 
@@ -65,13 +65,13 @@ try:
 
     urls = [u.strip() for u in FB_GROUP_URLS.split(",") if u.strip()]
 
-    for url in urls:
-        print("Processing:", url)
-        posts = scraper.get_recent_posts(url, limit=10)
-        # MODEL: fieldnames = ["post_id", "group_url", "post_time", "post_link", "caption", "isSentToTelegram"]
-        scraper.save_to_csv(posts, output_path="output/posts.csv")
-        print(f"Saved {len(posts)} posts from {url}")
-        time.sleep(2)  # polite pause between groups
+    # for url in urls:
+    #     print("Processing:", url)
+    #     posts = scraper.get_recent_posts(url, limit=10)
+    #     # MODEL: fieldnames = ["post_id", "group_url", "post_time", "post_link", "caption", "isSentToTelegram"]
+    #     scraper.save_to_csv(posts, output_path="output/posts.csv")
+    #     print(f"Saved {len(posts)} posts from {url}")
+    #     time.sleep(2)  # polite pause between groups
 
 finally:
     driver.quit()
