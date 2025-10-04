@@ -7,6 +7,8 @@ from fb_tool import FacebookGroupScraper
 from dotenv import load_dotenv
 from html_tool import HtmlSanitizer
 from telegram_processor import TelegramNotifier
+from fb_group_collector import FacebookGroupCollector
+
 
 
 # Load environment variables from .env file
@@ -15,7 +17,6 @@ load_dotenv()
 # Load credentials from environment variables for safety
 FB_USERNAME = os.getenv("FB_USERNAME", "your_email_or_phone")
 FB_PASSWORD = os.getenv("FB_PASSWORD", "your_password")
-FB_GROUP_URLS = os.getenv("FB_GROUP_URLS", "https://www.facebook.com/groups/yourgroup")
 FB_KEYWORDS = [k.strip() for k in os.getenv("FB_KEYWORDS", "keyword1 ,keyword2").split(",") if k.strip()]
 profile_path = os.getenv("CHROME_PROFILE_PATH", "invalid")
 LOOP_PER = int(os.getenv("LOOP_PER", "0"))  # 0 = run once; otherwise every X minutes
@@ -47,7 +48,9 @@ def run_scraper_cycle():
         driver.get("https://www.facebook.com/")
         time.sleep(5)
 
-        urls = [u.strip() for u in FB_GROUP_URLS.split(",") if u.strip()]
+        collector = FacebookGroupCollector(driver)
+        urls = collector.get_all_group_urls(max_scrolls=55)
+
         for url in urls:
             print(f"[INFO] Capturing posts from: {url}")
             scraper.capture_group_posts_html(

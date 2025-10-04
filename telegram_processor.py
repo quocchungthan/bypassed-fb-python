@@ -46,9 +46,17 @@ class TelegramNotifier:
         match_caption = re.search(r"==== Captions ====\n(.*?)\n====", content, re.S)
         if match_caption:
             caption = match_caption.group(1).strip()
+            # Check if caption is duplicated (two equal halves)
+            half = len(caption) // 2
+            if len(caption) % 2 == 0 and caption[:half] == caption[half:]:
+                caption = caption[:half].strip()
 
         # --- Extract URLs ---
-        match_urls = re.findall(r"https?://[^\s]+|(?:/posts/[^\s]+|/share/p/[^\s]+)", content)
+        if '==== URL Paths ====' in content:
+            url_section = content.split('==== URL Paths ====')[1]
+        else:
+            url_section = ""
+        match_urls = re.findall(r"https?://[^\s]+|(?:/groups/.*/posts/[^\s]+|/share/p/[^\s]+)", url_section)
         if match_urls:
             raw_url = match_urls[0].strip()
             if raw_url.startswith("/"):
@@ -95,7 +103,7 @@ class TelegramNotifier:
                     if url in self.sent_links:
                         print(f"[SKIP] Already sent: {url}")
                         continue
-
+                    # TODO: call the cmt tool here. that tool accept the url, browser go to the url, then comment the picture cmt.png I prepared.
                     print(f"[INFO] Sending post → {url}")
                     self._send_telegram_message(caption or "(No caption)", url)
                     self._save_sent_link(url)
