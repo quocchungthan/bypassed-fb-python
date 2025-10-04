@@ -14,6 +14,7 @@ load_dotenv()
 FB_USERNAME = os.getenv("FB_USERNAME", "your_email_or_phone")
 FB_PASSWORD = os.getenv("FB_PASSWORD", "your_password")
 FB_GROUP_URLS = os.getenv("FB_GROUP_URLS", "https://www.facebook.com/groups/yourgroup")
+FB_KEYWORDS = [k.strip() for k in os.getenv("FB_KEYWORDS", "keyword1 ,keyword2").split(",") if k.strip()]
 profile_path = os.getenv("CHROME_PROFILE_PATH", "invalid")
 
 print(profile_path)
