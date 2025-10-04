@@ -103,7 +103,8 @@ class TelegramNotifier:
                     if url in self.sent_links:
                         print(f"[SKIP] Already sent: {url}")
                         continue
-                    # TODO: call the cmt tool here. that tool accept the url, browser go to the url, then comment the picture cmt.png I prepared.
+                    # TODO: call the cmt tool here. that tool accept the url, browser go to the url, then comment the picture cmt.jpeg I prepared.
+                    # the logic for tool?.. sometime FB changes the UI to share/ send . wtf
                     print(f"[INFO] Sending post → {url}")
                     self._send_telegram_message(caption or "(No caption)", url)
                     self._save_sent_link(url)
