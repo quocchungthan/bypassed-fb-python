@@ -25,6 +25,16 @@ options.add_argument(f"--user-data-dir={profile_path}")
 options.add_argument("--disable-notifications")
 options.add_argument("--start-maximized")
 
+options.add_argument("--lang=vi-VN")
+options.add_experimental_option(
+    "prefs",
+    {
+        "intl.accept_languages": "vi-VN,vi",
+        "translate_whitelists": {},  # don't force translation
+        "translate.enabled": False,  # disable auto-translation
+    },
+)
+
 # options.add_argument("--disable-notifications")  # prevent popup dialogs
 driver = webdriver.Chrome(options=options)
 scraper = FacebookGroupScraper(driver=driver, manage_driver=False)  # we manage quitting in main
