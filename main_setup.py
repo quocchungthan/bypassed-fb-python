@@ -5,7 +5,6 @@ import time
 import os
 from fb_tool import FacebookGroupScraper
 from dotenv import load_dotenv
-from html_tool import HtmlSanitizer
 
 
 # Load environment variables from .env file
@@ -27,6 +26,7 @@ options.add_argument(f"--user-data-dir={profile_path}")
 options.add_argument("--disable-notifications")
 options.add_argument("--start-maximized")
 
+options.add_argument("--lang=vi-VN")
 options.add_experimental_option(
     "prefs",
     {
@@ -44,36 +44,9 @@ try:
     # Go to Facebook login page
     driver.get("https://www.facebook.com/")
     time.sleep(2)
-
-    # using existing profile to get rid of login part.
-    # Find and fill email/phone input
-    # email_input = driver.find_element(By.ID, "email")
-    # email_input.send_keys(FB_USERNAME)
-
-    # Find and fill password input
-    # password_input = driver.find_element(By.ID, "pass")
-    # password_input.send_keys(FB_PASSWORD)
-
-    # Press Enter (submit form)
-    # password_input.send_keys(Keys.RETURN)
-
-    # time.sleep(20)  # wait for login to complete
-
     # # Example: Go to a group or profile page
-    # driver.get("https://www.facebook.com/me")
-    time.sleep(5)
-
-    urls = [u.strip() for u in FB_GROUP_URLS.split(",") if u.strip()]
-
-    for url in urls:
-        scraper.capture_group_posts_html(
-            group_url=url,
-            css_selector="div.x1yztbdb.x1n2onr6.xh8yej3.x1ja2u2z",
-            max_scrolls=10
-        )
-        time.sleep(3)
-    sanitizer = HtmlSanitizer(logs_root="logs")
-    sanitizer.run()
+    driver.get("https://www.facebook.com/me")
+    time.sleep(1000) # time for login if needed and setting up zalo, languages for the browser profile.
 
 finally:
     driver.quit()
