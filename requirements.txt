@@ -2,3 +2,4 @@ selenium
 python-dotenv
 bs4
 pyperclip
+requests

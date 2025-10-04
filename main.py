@@ -6,6 +6,7 @@ import os
 from fb_tool import FacebookGroupScraper
 from dotenv import load_dotenv
 from html_tool import HtmlSanitizer
+from telegram_processor import TelegramNotifier
 
 
 # Load environment variables from .env file
@@ -17,63 +18,66 @@ FB_PASSWORD = os.getenv("FB_PASSWORD", "your_password")
 FB_GROUP_URLS = os.getenv("FB_GROUP_URLS", "https://www.facebook.com/groups/yourgroup")
 FB_KEYWORDS = [k.strip() for k in os.getenv("FB_KEYWORDS", "keyword1 ,keyword2").split(",") if k.strip()]
 profile_path = os.getenv("CHROME_PROFILE_PATH", "invalid")
+LOOP_PER = int(os.getenv("LOOP_PER", "0"))  # 0 = run once; otherwise every X minutes
 
-print(profile_path)
+print("Using Chrome profile:", profile_path)
+print("Loop interval (minutes):", LOOP_PER)
 
-# Launch browser (Chrome in this example)
-options = webdriver.ChromeOptions()
-# using existing profile to get rid of login part.
-options.add_argument(f"--user-data-dir={profile_path}")
-options.add_argument("--disable-notifications")
-options.add_argument("--start-maximized")
 
-options.add_experimental_option(
-    "prefs",
-    {
-        "intl.accept_languages": "vi-VN,vi",
-        "translate_whitelists": {},  # don't force translation
-        "translate.enabled": False,  # disable auto-translation
-    },
-)
+def run_scraper_cycle():
+    """Perform one full scraping + sanitizing + telegram notify cycle."""
+    # Launch Chrome
+    options = webdriver.ChromeOptions()
+    options.add_argument(f"--user-data-dir={profile_path}")
+    options.add_argument("--disable-notifications")
+    options.add_argument("--start-maximized")
+    options.add_experimental_option(
+        "prefs",
+        {
+            "intl.accept_languages": "vi-VN,vi",
+            "translate_whitelists": {},
+            "translate.enabled": False,
+        },
+    )
 
-# options.add_argument("--disable-notifications")  # prevent popup dialogs
-driver = webdriver.Chrome(options=options)
-scraper = FacebookGroupScraper(driver=driver, manage_driver=False)  # we manage quitting in main
+    driver = webdriver.Chrome(options=options)
+    scraper = FacebookGroupScraper(driver=driver, manage_driver=False)
 
-try:
-    # Go to Facebook login page
-    driver.get("https://www.facebook.com/")
-    time.sleep(2)
+    try:
+        driver.get("https://www.facebook.com/")
+        time.sleep(5)
 
-    # using existing profile to get rid of login part.
-    # Find and fill email/phone input
-    # email_input = driver.find_element(By.ID, "email")
-    # email_input.send_keys(FB_USERNAME)
+        urls = [u.strip() for u in FB_GROUP_URLS.split(",") if u.strip()]
+        for url in urls:
+            print(f"[INFO] Capturing posts from: {url}")
+            scraper.capture_group_posts_html(
+                group_url=url,
+                css_selector="div.x1yztbdb.x1n2onr6.xh8yej3.x1ja2u2z",
+                max_scrolls=10,
+            )
+            time.sleep(3)
 
-    # Find and fill password input
-    # password_input = driver.find_element(By.ID, "pass")
-    # password_input.send_keys(FB_PASSWORD)
+        # Step 2: sanitize HTML → plain text
+        sanitizer = HtmlSanitizer(logs_root="logs")
+        sanitizer.run()
 
-    # Press Enter (submit form)
-    # password_input.send_keys(Keys.RETURN)
+        # Step 3: send to Telegram
+        notifier = TelegramNotifier(logs_root="logs")
+        notifier.run()
 
-    # time.sleep(20)  # wait for login to complete
+    finally:
+        driver.quit()
+        print("[INFO] Browser closed.\n")
 
-    # # Example: Go to a group or profile page
-    # driver.get("https://www.facebook.com/me")
-    time.sleep(5)
 
-    urls = [u.strip() for u in FB_GROUP_URLS.split(",") if u.strip()]
-
-    for url in urls:
-        scraper.capture_group_posts_html(
-            group_url=url,
-            css_selector="div.x1yztbdb.x1n2onr6.xh8yej3.x1ja2u2z",
-            max_scrolls=10
-        )
-        time.sleep(3)
-    sanitizer = HtmlSanitizer(logs_root="logs")
-    sanitizer.run()
-
-finally:
-    driver.quit()
+if LOOP_PER <= 0:
+    print("[RUN] Single cycle mode (no looping).")
+    run_scraper_cycle()
+else:
+    print(f"[RUN] Continuous mode — will repeat every {LOOP_PER} minutes.")
+    while True:
+        start_time = time.strftime("%Y-%m-%d %H:%M:%S")
+        print(f"\n=== New Cycle at {start_time} ===")
+        run_scraper_cycle()
+        print(f"[SLEEP] Waiting {LOOP_PER} minutes before next cycle...")
+        time.sleep(LOOP_PER * 60)
