@@ -18,6 +18,7 @@ load_dotenv()
 FB_USERNAME = os.getenv("FB_USERNAME", "your_email_or_phone")
 FB_PASSWORD = os.getenv("FB_PASSWORD", "your_password")
 FB_KEYWORDS = [k.strip() for k in os.getenv("FB_KEYWORDS", "keyword1 ,keyword2").split(",") if k.strip()]
+LIMIT_GROUP_COUNT = int(os.getenv("LIMIT_GROUP_COUNT", "0"))  # 0 = no limit
 profile_path = os.getenv("CHROME_PROFILE_PATH", "invalid")
 LOOP_PER = int(os.getenv("LOOP_PER", "0"))  # 0 = run once; otherwise every X minutes
 
@@ -50,6 +51,8 @@ def run_scraper_cycle():
 
         collector = FacebookGroupCollector(driver)
         urls = collector.get_all_group_urls(max_scrolls=55)
+        if LIMIT_GROUP_COUNT > 0:
+            urls = urls[:LIMIT_GROUP_COUNT]
 
         for url in urls:
             print(f"[INFO] Capturing posts from: {url}")

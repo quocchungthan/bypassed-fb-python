@@ -72,7 +72,9 @@ class TelegramNotifier:
             print("[ERROR] Missing Telegram credentials.")
             return
 
-        html_message = f"<b>{caption}</b>\n\n<a href='{url}'>🔗 View Post</a>"
+        # Replace HTML special characters < > / \ with space in caption
+        sanitized_caption = re.sub(r'[<>/\\]', ' ', caption)
+        html_message = f"<b>{sanitized_caption}</b>\n\n<a href='{url}'>🔗 View Post</a>"
         response = requests.post(
             f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage",
             data={
