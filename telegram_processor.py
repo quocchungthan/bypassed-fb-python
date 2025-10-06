@@ -10,6 +10,7 @@ load_dotenv()
 BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "")
 CHAT_ID = os.getenv("TELEGRAM_CHAT_ID", "")
 SENT_LOG_PATH = "output/sent_posts.csv"
+CLEAN_FOLDER_AFTERWARD = os.getenv("CLEAN_FOLDER_AFTERWARD", "false").lower() == "true"
 
 
 class TelegramNotifier:
@@ -112,7 +113,8 @@ class TelegramNotifier:
                     self._save_sent_link(url)
 
         # After finishing all, clean up logs to save disk space
-        print("[🧹] Cleaning logs folder...")
-        shutil.rmtree(self.logs_root, ignore_errors=True)
-        os.makedirs(self.logs_root, exist_ok=True)
-        print("[✅] Logs cleaned up.")
+        if CLEAN_FOLDER_AFTERWARD:
+            print("[🧹] Cleaning logs folder...")
+            shutil.rmtree(self.logs_root, ignore_errors=True)
+            os.makedirs(self.logs_root, exist_ok=True)
+            print("[✅] Logs cleaned up.")
