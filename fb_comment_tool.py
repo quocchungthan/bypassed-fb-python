@@ -23,6 +23,8 @@ class FacebookCommenter:
 			for part in remove_non_bmp(comment).split('\n'):
 				cmt_box.send_keys(part)
 				time.sleep(1)
+				cmt_box.send_keys(" ");
+				cmt_box.send_keys(" ");
 				cmt_box.send_keys(Keys.SHIFT, Keys.ENTER)
 				time.sleep(1)
 
