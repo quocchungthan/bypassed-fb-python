@@ -15,6 +15,7 @@ load_dotenv()
 
 FB_KEYWORDS = [k.strip() for k in os.getenv("FB_KEYWORDS", "keyword1 ,keyword2").split(",") if k.strip()]
 BLACK_LIST = [k.strip() for k in os.getenv("BLACK_LIST", "keyword1 ,keyword2").split(",") if k.strip()]
+COPY_LINK_TEXT = os.getenv("COPY_LINK_TEXT", "Copy link")
 
 
 def copy_to_clipboard(text):
@@ -76,7 +77,7 @@ class FacebookGroupScraper:
                                 # Wait for the popup to appear and find the "Copy link" button
                                 copy_link_button = WebDriverWait(self.driver, 5).until(
                                     EC.presence_of_element_located((
-                                        By.XPATH, '//div[@role="button" and (contains(., "Copy link") or .//span[contains(., "Copy link")])]'
+                                        By.XPATH, f'//div[@role="button" and (contains(., "{COPY_LINK_TEXT}") or .//span[contains(., "{COPY_LINK_TEXT}")])]'
                                     ))
                                 )
                                 copy_link_button.click()
