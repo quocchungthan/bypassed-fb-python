@@ -4,6 +4,8 @@ import csv
 import requests
 import shutil
 from dotenv import load_dotenv
+from fasthome_room_finder import get_suggestions
+from fb_comment_tool import FacebookCommenter
 
 load_dotenv()
 
@@ -14,10 +16,11 @@ CLEAN_FOLDER_AFTERWARD = os.getenv("CLEAN_FOLDER_AFTERWARD", "false").lower() ==
 
 
 class TelegramNotifier:
-    def __init__(self, logs_root="logs"):
+    def __init__(self, logs_root="logs", driver=None):
         self.logs_root = logs_root
         os.makedirs(os.path.dirname(SENT_LOG_PATH), exist_ok=True)
         self.sent_links = self._load_sent_links()
+        self.commenter = FacebookCommenter(driver) if driver else None
 
     def _load_sent_links(self):
         links = set()
@@ -37,12 +40,17 @@ class TelegramNotifier:
 
     def _extract_caption_and_url(self, text_path):
         """Extract caption and the first valid URL from the .txt file."""
+        group_name = ""
         caption = ""
         url = ""
 
         with open(text_path, encoding="utf-8") as f:
             content = f.read()
 
+        # --- Extract group name ---
+        match_group = re.search(r"GROUPNAME\s*=\s*(.*?)\n", content)
+        if match_group:
+            group_name = match_group.group(1).strip()
         # --- Extract caption ---
         match_caption = re.search(r"==== Captions ====\n(.*?)\n====", content, re.S)
         if match_caption:
@@ -65,7 +73,7 @@ class TelegramNotifier:
             else:
                 url = raw_url
 
-        return caption, url
+        return caption, url, group_name
 
     def _send_telegram_message(self, caption, url):
         """Send message to Telegram in HTML format."""
@@ -92,12 +100,13 @@ class TelegramNotifier:
             print(f"[❌] Failed to send: {url} → {response.text}")
 
     def run(self):
-        """Scan logs folder for .txt files and send messages."""
+        """Scan logs folder for .txt files, get suggestions, comment, and send messages."""
+
         for root, _, files in os.walk(self.logs_root):
             for f in files:
                 if f.endswith(".txt"):
                     text_path = os.path.join(root, f)
-                    caption, url = self._extract_caption_and_url(text_path)
+                    caption, url, group_name = self._extract_caption_and_url(text_path)
 
                     if not url:
                         print(f"[SKIP] No valid post URL found in {text_path}")
@@ -106,12 +115,25 @@ class TelegramNotifier:
                     if url in self.sent_links:
                         print(f"[SKIP] Already sent: {url}")
                         continue
-                    # TODO: call the fasthome_room_finder.py here to get the suggestions, it returns the text for you to comment
-                    # TODO: from that text call fb_comment_tool.py to comment on that post url, and its return another url for us to save.
-                    
-                    print(f"[INFO] Sending post → {url}")
-                    self._send_telegram_message(caption or "(No caption)", url)
-                    self._save_sent_link(url)
+
+                    # Get suggestions for comment
+                    suggestion_text = get_suggestions(caption, group_name)
+                    print(f"[INFO] Suggestion for comment: {suggestion_text}")
+
+                    # Call fb_comment_tool.py to comment on the post
+                    # Pass url and suggestion_text as arguments
+                    try:
+                        commented_url = self.commenter.comment_on_post(url, suggestion_text) if self.commenter else None
+                    except Exception as e:
+                        print(f"[ERROR] Comment tool failed: {e}")
+                        commented_url = ""
+
+                    # Save the commented URL if available, else fallback to original
+                    save_url = commented_url or url
+
+                    print(f"[INFO] Sending post → {save_url}")
+                    self._send_telegram_message(caption or "(No caption)", save_url)
+                    self._save_sent_link(save_url)
 
         # After finishing all, clean up logs to save disk space
         if CLEAN_FOLDER_AFTERWARD:

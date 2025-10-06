@@ -16,7 +16,11 @@ load_dotenv()
 FB_KEYWORDS = [k.strip() for k in os.getenv("FB_KEYWORDS", "keyword1 ,keyword2").split(",") if k.strip()]
 BLACK_LIST = [k.strip() for k in os.getenv("BLACK_LIST", "keyword1 ,keyword2").split(",") if k.strip()]
 
-print(f"Using keywords: {FB_KEYWORDS} and black list: {BLACK_LIST}")
+
+def copy_to_clipboard(text):
+    """Copy the given text to the system clipboard."""
+    pyperclip.copy(text)
+    return True
 
 class FacebookGroupScraper:
     def __init__(self, driver, manage_driver=True):
@@ -38,7 +42,9 @@ class FacebookGroupScraper:
         """Scroll and capture all post containers matching selector."""
         collected_html = set()
         last_height = self.driver.execute_script("return document.body.scrollHeight")
-
+        # TODO: get the inner text of html of the title tag to get the group name.
+        group_name = self.driver.title
+        print(f"[INFO] Detected group name: {group_name}")
         for i in range(max_scrolls):
             print(f"[INFO] Scrolling iteration {i+1}/{max_scrolls} ...")
             time.sleep(scroll_pause)
@@ -54,9 +60,13 @@ class FacebookGroupScraper:
                             print(f"[⏭️] Skipping post (no keywords found)")
                             continue
 
+                        # Get HTML
+                        html = el.get_attribute("outerHTML")
+                        html = "<div> GROUPNAME = " + group_name +  "\n</div>" + "\n" + html;
+                        post_pure_html = html.lower()
                         self.driver.execute_script("arguments[0].scrollIntoView(true);", el)
                         time.sleep(1)
-                        if el.text.count('/posts/') == 0:
+                        if post_pure_html.count('/posts/') == 0:
                             # Try clicking the "Share" button
                             try:
                                 share_button = el.find_element(By.CSS_SELECTOR, 'span[data-ad-rendering-role="share_button"]')
@@ -77,9 +87,6 @@ class FacebookGroupScraper:
                             except Exception as share_err:
                                 print(f"[⚠️] Failed to extract post link: {share_err}")
                                 post_url = "link_not_found"
-
-                            # Get HTML
-                            html = el.get_attribute("outerHTML")
 
                             # Append the copied link at the end of HTML for now
                             html += f"\n<a href=\"{post_url}\"> go to post </a>"

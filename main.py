@@ -68,7 +68,7 @@ def run_scraper_cycle():
         sanitizer.run()
 
         # Step 3: send to Telegram
-        notifier = TelegramNotifier(logs_root="logs")
+        notifier = TelegramNotifier(logs_root="logs", driver=driver)
         notifier.run()
 
     finally:
