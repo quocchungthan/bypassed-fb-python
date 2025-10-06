@@ -1,11 +1,13 @@
 import sys
 import time
 from dotenv import load_dotenv
-from fb_tool import copy_to_clipboard
+from selenium.webdriver.common.keys import Keys
 
 # Load environment variables from .env file
 load_dotenv()
 
+def remove_non_bmp(text):
+    return ''.join(c for c in text if ord(c) <= 0xFFFF)
 
 class FacebookCommenter:
 	def __init__(self, driver):
@@ -14,15 +16,17 @@ class FacebookCommenter:
 	def comment_on_post(self, url, comment):
 		self.driver.get(url)
 		time.sleep(3)
-		copy_to_clipboard(comment)
 		try:
 			cmt_box = self.driver.find_element("css selector", "form[role='presentation'] div[role='textbox']")
 			cmt_box.click()
 			time.sleep(1)
-			cmt_box.send_keys("\ue03d")  # Ctrl+V
+			for part in remove_non_bmp(comment).split('\n'):
+				cmt_box.send_keys(part)
+				cmt_box.send_keys(Keys.SHIFT, Keys.ENTER)
+
 			time.sleep(1)
-			btn = self.driver.find_element("css selector", "div[contenteditable='true'][role='button']")
-			btn.click()
+			# Finally press Enter to submit
+			cmt_box.send_keys(Keys.ENTER)
 			time.sleep(2)
 			current_url = self.driver.current_url
 		except Exception as e:
