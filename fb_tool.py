@@ -14,7 +14,9 @@ from dotenv import load_dotenv
 load_dotenv()
 
 FB_KEYWORDS = [k.strip() for k in os.getenv("FB_KEYWORDS", "keyword1 ,keyword2").split(",") if k.strip()]
-print(f"Using keywords: {FB_KEYWORDS}")
+BLACK_LIST = [k.strip() for k in os.getenv("BLACK_LIST", "keyword1 ,keyword2").split(",") if k.strip()]
+
+print(f"Using keywords: {FB_KEYWORDS} and black list: {BLACK_LIST}")
 
 class FacebookGroupScraper:
     def __init__(self, driver, manage_driver=True):
@@ -48,7 +50,7 @@ class FacebookGroupScraper:
                     try:
                         # Check if post contains any of the FB_KEYWORDS
                         post_text = el.text.lower()
-                        if not any(keyword.lower() in post_text for keyword in FB_KEYWORDS):
+                        if not any(keyword.lower() in post_text for keyword in FB_KEYWORDS) or any(black_item.lower() in post_text for black_item in BLACK_LIST):
                             print(f"[⏭️] Skipping post (no keywords found)")
                             continue
 
