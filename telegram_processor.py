@@ -73,6 +73,9 @@ class TelegramNotifier:
             else:
                 url = raw_url
 
+        # Remove query parameters from URL if present
+        if url and "?" in url:
+            url = url.split("?")[0]
         return caption, url, group_name
 
     def _send_telegram_message(self, caption, url):
