@@ -48,6 +48,9 @@ class FacebookCommenter:
 		except Exception as e:
 			print(f"[ERROR] Failed to comment: {e}", file=sys.stderr)
 			current_url = url
+		# Remove query parameters from URL if present
+		if current_url and "?" in current_url:
+			current_url = current_url.split("?")[0]
 		return current_url
 
 	def upload_comment_image(self, image_path):
