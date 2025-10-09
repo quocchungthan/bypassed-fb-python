@@ -8,6 +8,7 @@ from dotenv import load_dotenv
 from html_tool import HtmlSanitizer
 from telegram_processor import TelegramNotifier
 from fb_group_collector import FacebookGroupCollector
+import random
 
 
 
@@ -52,7 +53,8 @@ def run_scraper_cycle():
         collector = FacebookGroupCollector(driver)
         urls = collector.get_all_group_urls(max_scrolls=55)
         if LIMIT_GROUP_COUNT > 0:
-            urls = urls[:LIMIT_GROUP_COUNT]
+            random.shuffle(urls)  # Shuffle the list in place
+            urls = urls[:LIMIT_GROUP_COUNT]  # Take the first N items after shuffle
 
         for url in urls:
             print(f"[INFO] Capturing posts from: {url}")
