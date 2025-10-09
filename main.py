@@ -55,6 +55,8 @@ def run_scraper_cycle():
         if LIMIT_GROUP_COUNT > 0:
             random.shuffle(urls)  # Shuffle the list in place
             urls = urls[:LIMIT_GROUP_COUNT]  # Take the first N items after shuffle
+        sanitizer = HtmlSanitizer(logs_root="logs")
+        notifier = TelegramNotifier(logs_root="logs", driver=driver)
 
         for url in urls:
             print(f"[INFO] Capturing posts from: {url}")
@@ -63,15 +65,13 @@ def run_scraper_cycle():
                 css_selector="div.x1yztbdb.x1n2onr6.xh8yej3.x1ja2u2z",
                 max_scrolls=10,
             )
+            # Step 2: sanitize HTML → plain text
+            sanitizer.run()
+
+            # Step 3: send to Telegram
+            notifier.run()
             time.sleep(3)
-
-        # Step 2: sanitize HTML → plain text
-        sanitizer = HtmlSanitizer(logs_root="logs")
-        sanitizer.run()
-
-        # Step 3: send to Telegram
-        notifier = TelegramNotifier(logs_root="logs", driver=driver)
-        notifier.run()
+      
 
     finally:
         driver.quit()
