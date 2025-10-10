@@ -3,6 +3,7 @@ import re
 import csv
 import requests
 import shutil
+import time
 from dotenv import load_dotenv
 from fasthome_room_finder import get_suggestions
 from fb_comment_tool import FacebookCommenter
