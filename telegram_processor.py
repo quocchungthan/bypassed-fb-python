@@ -107,6 +107,7 @@ class TelegramNotifier:
 
         for root, _, files in os.walk(self.logs_root):
             for f in files:
+                time.sleep(5)
                 if f.endswith(".txt"):
                     text_path = os.path.join(root, f)
                     caption, url, group_name = self._extract_caption_and_url(text_path)
