@@ -10,6 +10,23 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from dotenv import load_dotenv
 
+import re
+
+def contains_9_digit_sequence(text: str) -> bool:
+    """
+    Clean the input text by removing spaces and dots,
+    then check if it contains a sequence of at least 9 continuous digits.
+    Returns True if found, otherwise False.
+    """
+    if not text:
+        return False
+
+    # Remove spaces and dots
+    cleaned_text = text.replace(" ", "").replace(".", "")
+
+    # Check for 9 or more continuous digits
+    return bool(re.search(r"\d{9,}", cleaned_text))
+
 # Load environment variables from .env file
 load_dotenv()
 
@@ -57,8 +74,8 @@ class FacebookGroupScraper:
                     try:
                         # Check if post contains any of the FB_KEYWORDS
                         post_text = el.text.lower()
-                        if not any(keyword.lower() in post_text for keyword in FB_KEYWORDS) or any(black_item.lower() in post_text for black_item in BLACK_LIST):
-                            print(f"[⏭️] Skipping post (no keywords found)")
+                        if contains_9_digit_sequence(post_text) or not any(keyword.lower() in post_text for keyword in FB_KEYWORDS) or any(black_item.lower() in post_text for black_item in BLACK_LIST):
+                            print(f"[⏭️] Skipping post (no keywords found) or has blacklist word or has phonenumber")
                             continue
 
                         # Get HTML
