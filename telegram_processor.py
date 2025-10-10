@@ -137,7 +137,8 @@ class TelegramNotifier:
                     save_url = commented_url or url
 
                     print(f"[INFO] Sending post → {save_url}")
-                    self._send_telegram_message(caption or "(No caption)", save_url)
+                    if suggestion_text is not None and suggestion_text.strip() != "":
+                        self._send_telegram_message(caption or "(No caption)", save_url)
                     self._save_sent_link(save_url)
 
         # After finishing all, clean up logs to save disk space

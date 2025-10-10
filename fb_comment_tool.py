@@ -23,17 +23,24 @@ class FacebookCommenter:
 		self.driver = driver
 
 	def comment_on_post(self, url, comment):
+		if comment is None or comment.strip() == "":
+			print("[INFO] No comment to post.")
+			return url
 		self.driver.get(url)
-		time.sleep(3)
+		time.sleep(6) # take quite long for the inbox to dissapear.
 		try:
 			cmt_box = self.driver.find_element("css selector", "form[role='presentation'] div[role='textbox']")
 			cmt_box.click()
-			# Optionally attach an image if needed using upload_comment_image
-			image_filename = f"cmt{random.choice([1,2])}.jpeg"
-			image_path = get_cmt_image_abspath(image_filename)
-			self.upload_comment_image(image_path)
-			time.sleep(1)
 			for part in remove_non_bmp(comment).split('\n'):
+				if part.strip() == "":
+					continue
+				# line for picture f"[IMG{idx+1}] {download_path}"
+				if part.startswith("[IMG"):
+					img_filename = part.split(" ")[1]
+					img_path = get_cmt_image_abspath(img_filename)
+					self.upload_comment_image(img_path)
+					time.sleep(1)
+					continue
 				cmt_box.send_keys(part)
 				time.sleep(1)
 				cmt_box.send_keys(" ");
@@ -41,6 +48,11 @@ class FacebookCommenter:
 				cmt_box.send_keys(Keys.SHIFT, Keys.ENTER)
 				time.sleep(1)
 
+			# Optionally attach an image if needed using upload_comment_image
+			image_filename = f"cmt{random.choice([1,2])}.jpeg"
+			image_path = get_cmt_image_abspath(image_filename)
+			self.upload_comment_image(image_path)
+			time.sleep(1)
 			# Finally press Enter to submit
 			cmt_box.send_keys(Keys.ENTER)
 			time.sleep(2)
